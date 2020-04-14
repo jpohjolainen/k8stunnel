@@ -11,7 +11,27 @@ in a nicer package that can be build for different OS.
 
 ## Usage
 
-Download binary to your correct OS from the releases.
+Download binary to your correct OS from the [releases](https://github.com/jpohjolainen/k8stunnel/releases).
+
+```
+NAME:
+   k8stunnel - Create tunnel through K8s
+
+USAGE:
+   k8stunnel [options] <host> <port> [localport]
+
+VERSION:
+   1.0.0
+
+COMMANDS:
+   help, h  Shows a list of commands or help for one command
+
+GLOBAL OPTIONS:
+   --kubeconfig value, -k value  Path to kubeconfig (default: "/home/messis/.kube/config") [$KUBECONFIG]
+   --namespace value, -n value   Namespace in K8s to deploy Socat (default: "default")
+   --help, -h                    show help (default: false)
+   --version, -v                 print the version (default: false)
+```
 
 Connecting to www.google.com though Kubernetes cluster:
 
@@ -24,6 +44,7 @@ $ k8stunnel www.google.com 80 1080
 $ curl localhost:1080
 ...
 ```
+
 
 ## Build
 
