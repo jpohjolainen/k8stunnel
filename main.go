@@ -49,7 +49,7 @@ func main() {
 
   app := &cli.App{
     Name: "k8stunnel",
-    Version: "1.0.0",
+    Version: "1.0.1",
     Compiled: time.Now(),
     Usage: "Create tunnel through K8s",
     UsageText: "k8stunnel [options] <host> <port> [localport]",
