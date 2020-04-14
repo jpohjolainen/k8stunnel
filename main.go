@@ -61,9 +61,7 @@ func main() {
         fmt.Printf("You need to specify atleast 2 arguments.\n")
         os.Exit(2)
       }
-
-      fmt.Println(c.NArg())
-
+      
       tunnel.destinationHost = c.Args().Get(0)
       dPort := parseInt32OrExit(c.Args().Get(1))
       tunnel.destinationPort = int32(dPort)

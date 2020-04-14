@@ -38,11 +38,19 @@ Connecting to www.google.com though Kubernetes cluster:
 ```bash
 
 $ k8stunnel www.google.com 80 1080
+Deploying 'k8stunnel-vdrkz' with tunnel to 'www.google.com:80'...done.
+
+Ready to receive traffic to localhost:32001
+Press CTRL-C to quit..
+
+## On another terminal
+$ curl localhost:32001
+<!DOCTYPE html>
+<html lang=en>
 ...
 
-# On another terminal
-$ curl localhost:1080
-...
+## Pressing ctrl-c
+^CDeleting 'k8stunnel-vdrkz'...done.
 ```
 
 
