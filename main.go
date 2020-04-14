@@ -62,7 +62,9 @@ func main() {
         os.Exit(2)
       }
 
-      tunnel.destinationHost = c.Args().First()
+      fmt.Println(c.NArg())
+
+      tunnel.destinationHost = c.Args().Get(0)
       dPort := parseInt32OrExit(c.Args().Get(1))
       tunnel.destinationPort = int32(dPort)
       tunnel.containerPort = randomHighPort()
@@ -84,6 +86,10 @@ func main() {
   err := app.Run(os.Args)
   if err != nil {
     panic(err)
+  }
+
+  if tunnel.destinationHost == "" {
+    os.Exit(2)
   }
 
   tunnel.ctx = context.Background()
