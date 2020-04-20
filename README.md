@@ -40,11 +40,11 @@ Connecting to www.google.com though Kubernetes cluster:
 $ k8stunnel www.google.com 80 1080
 Deploying 'k8stunnel-vdrkz' with tunnel to 'www.google.com:80'...done.
 
-Ready to receive traffic to localhost:32001
+Ready to receive traffic to localhost:1080
 Press CTRL-C to quit..
 
 ## On another terminal
-$ curl localhost:32001
+$ curl localhost:1080
 <!DOCTYPE html>
 <html lang=en>
 ...
