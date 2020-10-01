@@ -21,6 +21,7 @@ import (
 var (
 	kubeconfig string
 	namespace  string
+	timeout    int
 
 	cliFlags = []cli.Flag{
 		&cli.StringFlag{
@@ -38,6 +39,13 @@ var (
 			Usage:       "Namespace in K8s to deploy Socat",
 			Destination: &namespace,
 		},
+		&cli.IntFlag{
+			Name:        "timeout",
+			Aliases:     []string{"t"},
+			Value:       10,
+			Usage:       "Timeout in seconds to wait connection to tunnel",
+			Destination: &timeout,
+		},
 	}
 )
 
@@ -50,7 +58,7 @@ func main() {
 
 	app := &cli.App{
 		Name:                 "k8stunnel",
-		Version:              "1.0.1",
+		Version:              "1.0.3",
 		Compiled:             time.Now(),
 		Usage:                "Create tunnel through K8s",
 		UsageText:            "k8stunnel [options] <host> <port> [localport]",

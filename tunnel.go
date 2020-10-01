@@ -52,7 +52,6 @@ var (
 			Containers: []apiv1.Container{
 				{
 					Name:  "socat",
-					Image: "alpine/socat:1.7.3.4-r0",
 					Command: []string{
 						"socat",
 					},
@@ -84,6 +83,7 @@ func (tunnel *k8sTunnel) deploy() {
 	soCatPod.ObjectMeta.Name = tunnel.podName
 	soCatPod.ObjectMeta.Namespace = namespace
 	soCatPod.ObjectMeta.Labels["app"] = tunnel.podName
+	soCatPod.Spec.Containers[0].Image = fmt.Sprintf("alpine/socat:%s", "latest") //"1.7.3.4-r0")
 	soCatPod.Spec.Containers[0].Args = []string{
 		fmt.Sprintf("TCP-LISTEN:%d,fork", tunnel.containerPort),
 		fmt.Sprintf("TCP:%s:%d", tunnel.destinationHost, tunnel.destinationPort),
@@ -91,8 +91,6 @@ func (tunnel *k8sTunnel) deploy() {
 	soCatPod.Spec.Containers[0].Ports[0].ContainerPort = tunnel.containerPort
 
 	podClient := tunnel.client.CoreV1().Pods(namespace)
-
-	// fmt.Printf("%#v\n", soCatPod)
 
 	fmt.Printf("Deploying '%s' with tunnel to '%s:%d'...", tunnel.podName,
 		tunnel.destinationHost, tunnel.destinationPort)
@@ -102,7 +100,6 @@ func (tunnel *k8sTunnel) deploy() {
 		fmt.Printf("\nError: %v\n", err)
 		os.Exit(4)
 	}
-	// fmt.Printf("%#d\n", pod)
 
 	tunnel.watchPod("created")
 }
@@ -123,8 +120,6 @@ func (tunnel *k8sTunnel) delete() {
 func (tunnel *k8sTunnel) startPortForward() {
 	var wg sync.WaitGroup
 
-	wg.Add(1)
-
 	stopCh := make(chan struct{}, 1)
 	readyCh := make(chan struct{})
 	stream := genericclioptions.IOStreams{
@@ -136,6 +131,7 @@ func (tunnel *k8sTunnel) startPortForward() {
 	sigs := make(chan os.Signal, 1)
 	signal.Notify(sigs, syscall.SIGINT, syscall.SIGTERM)
 
+	wg.Add(1)
 	go func() {
 		<-sigs
 		close(stopCh)
@@ -154,9 +150,10 @@ func (tunnel *k8sTunnel) startPortForward() {
 		dialer := spdy.NewDialer(upgrader, &http.Client{Transport: transport},
 			http.MethodPost, &url.URL{Scheme: "https", Path: path, Host: host})
 
+		fmt.Println("Creating tunnel...")
 		ports := fmt.Sprintf("%d:%d", tunnel.localPort, tunnel.containerPort)
 		fw, err := portforward.New(dialer, []string{ports}, stopCh, readyCh,
-			nil, stream.ErrOut)
+			stream.Out, stream.ErrOut)
 		if err != nil {
 			panic(err)
 		}
@@ -169,6 +166,10 @@ func (tunnel *k8sTunnel) startPortForward() {
 		fmt.Printf("\nReady to receive traffic to localhost:%d\n", tunnel.localPort)
 		fmt.Println("Press CTRL-C to quit..")
 		break
+	case <-time.After(time.Second * time.Duration(timeout)):
+		fmt.Println("Tunnel connection timed out!")
+		close(stopCh)
+		wg.Done()
 	}
 
 	wg.Wait()
