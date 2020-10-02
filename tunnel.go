@@ -37,6 +37,7 @@ type k8sTunnel struct {
 	config          *rest.Config
 	client          *kubernetes.Clientset
 	stopCh          chan struct{}
+	readyCh         chan struct{}
 }
 
 var (
@@ -51,7 +52,7 @@ var (
 		Spec: apiv1.PodSpec{
 			Containers: []apiv1.Container{
 				{
-					Name:  "socat",
+					Name: "socat",
 					Command: []string{
 						"socat",
 					},
@@ -120,8 +121,8 @@ func (tunnel *k8sTunnel) delete() {
 func (tunnel *k8sTunnel) startPortForward() {
 	var wg sync.WaitGroup
 
-	stopCh := make(chan struct{}, 1)
-	readyCh := make(chan struct{})
+	tunnel.stopCh = make(chan struct{}, 1)
+	tunnel.readyCh = make(chan struct{})
 	stream := genericclioptions.IOStreams{
 		In:     os.Stdin,
 		Out:    os.Stdout,
@@ -134,7 +135,9 @@ func (tunnel *k8sTunnel) startPortForward() {
 	wg.Add(1)
 	go func() {
 		<-sigs
-		close(stopCh)
+		if tunnel.stopCh != nil {
+			close(tunnel.stopCh)
+		}
 		wg.Done()
 	}()
 
@@ -152,8 +155,8 @@ func (tunnel *k8sTunnel) startPortForward() {
 
 		fmt.Println("Creating tunnel...")
 		ports := fmt.Sprintf("%d:%d", tunnel.localPort, tunnel.containerPort)
-		fw, err := portforward.New(dialer, []string{ports}, stopCh, readyCh,
-			stream.Out, stream.ErrOut)
+		fw, err := portforward.New(dialer, []string{ports}, tunnel.stopCh,
+			tunnel.readyCh, stream.Out, stream.ErrOut)
 		if err != nil {
 			panic(err)
 		}
@@ -162,13 +165,15 @@ func (tunnel *k8sTunnel) startPortForward() {
 	}()
 
 	select {
-	case <-readyCh:
+	case <-tunnel.readyCh:
 		fmt.Printf("\nReady to receive traffic to localhost:%d\n", tunnel.localPort)
 		fmt.Println("Press CTRL-C to quit..")
 		break
 	case <-time.After(time.Second * time.Duration(timeout)):
 		fmt.Println("Tunnel connection timed out!")
-		close(stopCh)
+		if tunnel.stopCh != nil {
+			close(tunnel.stopCh)
+		}
 		wg.Done()
 	}
 
@@ -185,7 +190,9 @@ func (tunnel *k8sTunnel) watchPod(w string) {
 				pod := obj.(*apiv1.Pod)
 				if pod.ObjectMeta.Name == tunnel.podName {
 					fmt.Println("done.")
-					close(stopCh)
+					if stopCh != nil {
+						close(stopCh)
+					}
 				}
 			},
 		}
@@ -195,7 +202,9 @@ func (tunnel *k8sTunnel) watchPod(w string) {
 				pod := obj.(*apiv1.Pod)
 				if pod.ObjectMeta.Name == tunnel.podName {
 					fmt.Println("done.")
-					close(stopCh)
+					if stopCh != nil {
+						close(stopCh)
+					}
 				}
 			},
 		}
